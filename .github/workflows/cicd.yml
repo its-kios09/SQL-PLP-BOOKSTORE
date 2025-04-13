@@ -29,15 +29,10 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      - name: Describe Database Schema
-        run: |
-          echo "✅ Describing the database structure..."
-          mysql -h 127.0.0.1 -u root -proot -e "DESCRIBE DATABASE bookstore;"
-
       - name: Describe All Tables in Database
         run: |
-          echo "✅ Describing all tables in the bookstore database..."
-          # List all tables in the database
+          echo "✅ Describing the tables in the bookstore database..."
+          # List all tables in the bookstore database
           tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" | tail -n +2)
           
           # Loop through all tables and describe them
