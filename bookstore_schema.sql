@@ -46,3 +46,27 @@ CREATE TABLE
         author_id INT NOT NULL,
         PRIMARY KEY (book_id, author_id)
     );
+
+-- Table: Create country table
+CREATE TABLE
+    country (
+        country_id INT AUTO_INCREMENT PRIMARY KEY,
+        country_name VARCHAR(100) NOT NULL
+    );
+
+-- Table:  Create address_status table
+CREATE TABLE
+    address_status (
+        status_id INT AUTO_INCREMENT PRIMARY KEY,
+        status_value VARCHAR(20) NOT NULL
+    );
+
+-- Table: Create address table
+CREATE TABLE
+    address (
+        address_id INT AUTO_INCREMENT PRIMARY KEY,
+        street VARCHAR(255) NOT NULL,
+        city VARCHAR(100) NOT NULL,
+        postal_code VARCHAR(20),
+        country_id INT
+    );
