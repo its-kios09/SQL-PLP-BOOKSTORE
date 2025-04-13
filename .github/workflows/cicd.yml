@@ -1,4 +1,4 @@
-name: CI - MySQL Schema Test
+name: Bookstore Database CI/CD
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD || 'root' }}
           MYSQL_DATABASE: bookstore
         ports:
           - 3306:3306
@@ -26,10 +26,19 @@ jobs:
 
     steps:
       - name: ⬇️ Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🕒 Wait for MySQL to be ready
-        run: sleep 30
+        timeout-minutes: 2
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h127.0.0.1 -uroot -p${{ secrets.DB_PASSWORD || 'root' }} --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL ($i/30)..."
+            sleep 2
+          done
 
       - name: 🔧 Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
@@ -37,73 +46,74 @@ jobs:
       - name: ♻️ Clean existing database
         run: |
           echo "♻️ Dropping and recreating database..."
-          mysql -h 127.0.0.1 -u root -proot -e "DROP DATABASE IF EXISTS bookstore; CREATE DATABASE bookstore;" --batch --silent
+          mysql -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+            -e "DROP DATABASE IF EXISTS bookstore; CREATE DATABASE bookstore;" \
+            --batch --silent
           echo "✅ Database reset complete"
 
       - name: 📦 Apply bookstore schema
         run: |
-          echo "📦 Applying schema: bookstore_schema.sql"
-          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql --batch --silent
+          echo "📦 Applying schema..."
+          mysql -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+            bookstore < bookstore_schema.sql \
+            --batch --silent
           echo "✅ Schema applied successfully"
 
-      - name: 🗂 Describe All Tables in Database
+      - name: 🗂 Verify schema structure
         run: |
-          echo -e "\033[1;34m📋 Describing all tables in 'bookstore' database...\033[0m"
-          tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" --batch --silent | tail -n +2)
+          echo "📋 Listing all tables:"
+          mysql -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+            bookstore -e "SHOW TABLES;" --table
 
-          if [ -z "$tables" ]; then
-            echo -e "\033[1;31m❌ No tables found in 'bookstore'. Check schema file.\033[0m"
-            exit 1
+          echo -e "\n🔍 Sample table structure:"
+          mysql -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+            bookstore -e "DESCRIBE book; DESCRIBE author;" --table
+
+      - name: 🚀 Execute test queries
+        run: |
+          if [ -d "queries" ]; then
+            for file in queries/*.sql; do
+              echo -e "\n▶️ Testing: $(basename "$file")"
+              mysql -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+                bookstore < "$file" --table || exit 1
+            done
+          else
+            echo "ℹ️ No queries directory found"
           fi
 
-          for table in $tables; do
-            echo -e "\n\033[1;36m🔎 Table: $table\033[0m"
-            mysql -h 127.0.0.1 -u root -proot bookstore -e "DESCRIBE $table;" --table
-          done
-
-      - name: 🚀 Execute SQL Queries with Output
-        run: |
-          echo -e "\033[1;34m🚀 Running SQL files in 'queries/' with output...\033[0m"
-          shopt -s nullglob
-          sql_files=(queries/*.sql)
-
-          if [ ${#sql_files[@]} -eq 0 ]; then
-            echo -e "\033[1;33m⚠️ No SQL test files found in queries/\033[0m"
-          fi
-
-          for file in "${sql_files[@]}"; do
-            echo -e "\n\033[1;36m▶️ Executing: $file\033[0m"
-            echo -e "\033[1;90m----- SQL Contents -----\033[0m"
-            cat "$file"
-            echo -e "\033[1;90m------------------------\033[0m"
-
-            echo -e "\n\033[1;32m🧪 Result:\033[0m"
-            mysql -h 127.0.0.1 -u root -proot bookstore --table < "$file" || {
-              echo -e "\033[1;31m❌ Error executing $file\033[0m"
-              exit 1
-            }
-          done
-
-      - name: 💾 Dump final database state
+      - name: 💾 Create database dump
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p db_dumps
-          mysqldump -h 127.0.0.1 -u root -proot bookstore > db_dumps/bookstore_dump_$(date +%Y%m%d_%H%M%S).sql
-          echo "✅ Database dumped successfully"
+          timestamp=$(date +%Y%m%d_%H%M%S)
+          dump_file="db_dumps/bookstore_$timestamp.sql"
+          
+          echo "📦 Creating dump: $dump_file"
+          mysqldump -h 127.0.0.1 -u root -p${{ secrets.DB_PASSWORD || 'root' }} \
+            --no-tablespaces \
+            --skip-comments \
+            bookstore > "$dump_file"
+          
+          # Create latest.sql symlink
+          ln -sf "$dump_file" db_dumps/latest.sql
+          echo "✅ Dump created successfully"
 
-      - name: 📤 Upload database dump
+      - name: 📤 Upload artifacts
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: database-dump
-          path: db_dumps/
-          retention-days: 1
+          name: database-dumps
+          path: |
+            db_dumps/*.sql
+            db_dumps/latest.sql
+          retention-days: 7
 
-      - name: 🔄 Commit updated dump to repo
+      - name: 🔄 Update repository
         if: github.ref == 'refs/heads/main'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add db_dumps/
-          git commit -m "Update database dump [skip ci]" || echo "No changes to commit"
+          git commit -m "📦 Update database dump [skip ci]" || echo "⏩ No changes to commit"
+          git pull --rebase
           git push
