@@ -70,3 +70,27 @@ CREATE TABLE
         postal_code VARCHAR(20),
         country_id INT
     );
+
+-- Table: Create shipping_method table
+CREATE TABLE
+    shipping_method (
+        method_id INT AUTO_INCREMENT PRIMARY KEY,
+        method_name VARCHAR(50) NOT NULL,
+        cost DECIMAL(10, 2) NOT NULL
+    );
+
+-- Table: Create order_status table
+CREATE TABLE
+    order_status (
+        status_id INT AUTO_INCREMENT PRIMARY KEY,
+        status_value VARCHAR(20) NOT NULL
+    );
+
+-- Table: Create cust_order table
+CREATE TABLE
+    cust_order (
+        order_id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        shipping_method_id INT,
+        order_date DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
