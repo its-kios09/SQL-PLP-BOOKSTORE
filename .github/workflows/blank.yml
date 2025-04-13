@@ -1,0 +1,40 @@
+name: CI - MySQL Schema Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  mysql-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bookstore
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Wait for MySQL to be ready
+        run: sleep 30
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Run schema and test SQL
+        run: |
+          # Apply the bookstore schema
+          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql
+          
+          # If test queries exist, run them
+          if [ -f queries/test_queries.sql ]; then
+            mysql -h 127.0.0.1 -u root -proot bookstore < queries/test_queries.sql
+          fi
