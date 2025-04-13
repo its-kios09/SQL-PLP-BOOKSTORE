@@ -118,3 +118,14 @@ CREATE TABLE
         shipping_method_id INT,
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+-- Table: Add book foreign keys
+ALTER TABLE book ADD CONSTRAINT fk_book_publisher FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
+ADD CONSTRAINT fk_book_language FOREIGN KEY (language_id) REFERENCES book_language (language_id);
+
+-- Table: Add book_author foreign keys
+ALTER TABLE book_author ADD CONSTRAINT fk_bookauthor_book FOREIGN KEY (book_id) REFERENCES book (book_id),
+ADD CONSTRAINT fk_bookauthor_author FOREIGN KEY (author_id) REFERENCES author (author_id);
+
+-- Table: Add address foreign key
+ALTER TABLE address ADD CONSTRAINT fk_address_country FOREIGN KEY (country_id) REFERENCES country (country_id);
