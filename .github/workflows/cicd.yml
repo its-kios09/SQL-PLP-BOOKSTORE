@@ -29,12 +29,37 @@ jobs:
       - name: Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
+      - name: Describe Database Schema
+        run: |
+          echo "✅ Describing the database structure..."
+          mysql -h 127.0.0.1 -u root -proot -e "DESCRIBE DATABASE bookstore;"
+
+      - name: Describe All Tables in Database
+        run: |
+          echo "✅ Describing all tables in the bookstore database..."
+          # List all tables in the database
+          tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" | tail -n +2)
+          
+          # Loop through all tables and describe them
+          for table in $tables; do
+            echo "✅ Describing table: $table"
+            mysql -h 127.0.0.1 -u root -proot bookstore -e "DESCRIBE $table;"
+          done
+
       - name: Run schema and test SQL
         run: |
           # Apply the bookstore schema
           mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql
           
-          # If test queries exist, run them
-          if [ -f queries/test_queries.sql ]; then
-            mysql -h 127.0.0.1 -u root -proot bookstore < queries/test_queries.sql
-          fi
+          # Define an array of possible query files
+          test_files=("queries/test_queries.sql" "queries/additional_tests.sql" "queries/extra_test.sql")
+          
+          # Loop through the array and run any existing query files
+          for file in "${test_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file found in PR. Running test queries..."
+              mysql -h 127.0.0.1 -u root -proot bookstore < "$file"
+            else
+              echo "⚠️ No $file found in PR. Skipping this test query file."
+            fi
+          done
