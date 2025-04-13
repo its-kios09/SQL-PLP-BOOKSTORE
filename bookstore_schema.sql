@@ -6,8 +6,6 @@ CREATE TABLE book_language (
     language_id INT AUTO_INCREMENT PRIMARY KEY,
     language_name VARCHAR(50) NOT NULL,
     language_code CHAR(2) NOT NULL
-<<<<<<< Updated upstream
-=======
 );
 
 -- Table : publisher table
@@ -27,5 +25,4 @@ CREATE TABLE book (
     num_pages INT,
     price DECIMAL(10,2) NOT NULL,
     stock_quantity INT DEFAULT 0
->>>>>>> Stashed changes
 );
