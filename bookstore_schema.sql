@@ -7,3 +7,10 @@ CREATE TABLE book_language (
     language_name VARCHAR(50) NOT NULL,
     language_code CHAR(2) NOT NULL
 );
+
+-- Table :Create publisher table
+CREATE TABLE publisher (
+    publisher_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100)
+);
