@@ -95,26 +95,39 @@ CREATE TABLE
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
--- Table: Create shipping_method table
+-- Table: Create customer table
 CREATE TABLE
-    shipping_method (
-        method_id INT AUTO_INCREMENT PRIMARY KEY,
-        method_name VARCHAR(50) NOT NULL,
-        cost DECIMAL(10, 2) NOT NULL
+    customer (
+        customer_id INT AUTO_INCREMENT PRIMARY KEY,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL
     );
 
--- Table: Create order_status table
+-- Table: Create customer_address table
 CREATE TABLE
-    order_status (
-        status_id INT AUTO_INCREMENT PRIMARY KEY,
-        status_value VARCHAR(20) NOT NULL
-    );
-
--- Table: Create cust_order table
-CREATE TABLE
-    cust_order (
-        order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_address (
         customer_id INT NOT NULL,
-        shipping_method_id INT,
-        order_date DATETIME DEFAULT CURRENT_TIMESTAMP
+        address_id INT NOT NULL,
+        status_id INT NOT NULL,
+        PRIMARY KEY (customer_id, address_id)
+    );
+
+-- Table: Create order_line table
+CREATE TABLE
+    order_line (
+        line_id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        book_id INT NOT NULL,
+        quantity INT NOT NULL,
+        price DECIMAL(10, 2) NOT NULL
+    );
+
+-- Table: Create order_history table
+CREATE TABLE
+    order_history (
+        history_id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        status_id INT NOT NULL,
+        status_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );
