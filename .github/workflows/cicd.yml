@@ -34,15 +34,22 @@ jobs:
       - name: 🔧 Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
+      - name: ♻️ Clean existing database
+        run: |
+          echo "♻️ Dropping and recreating database..."
+          mysql -h 127.0.0.1 -u root -proot -e "DROP DATABASE IF EXISTS bookstore; CREATE DATABASE bookstore;" --batch --silent
+          echo "✅ Database reset complete"
+
       - name: 📦 Apply bookstore schema
         run: |
           echo "📦 Applying schema: bookstore_schema.sql"
-          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql
+          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql --batch --silent
+          echo "✅ Schema applied successfully"
 
       - name: 🗂 Describe All Tables in Database
         run: |
           echo -e "\033[1;34m📋 Describing all tables in 'bookstore' database...\033[0m"
-          tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" | tail -n +2)
+          tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" --batch --silent | tail -n +2)
 
           if [ -z "$tables" ]; then
             echo -e "\033[1;31m❌ No tables found in 'bookstore'. Check schema file.\033[0m"
@@ -51,7 +58,7 @@ jobs:
 
           for table in $tables; do
             echo -e "\n\033[1;36m🔎 Table: $table\033[0m"
-            mysql -h 127.0.0.1 -u root -proot bookstore -e "DESCRIBE $table;"
+            mysql -h 127.0.0.1 -u root -proot bookstore -e "DESCRIBE $table;" --table
           done
 
       - name: 🚀 Execute SQL Queries with Output
@@ -76,3 +83,27 @@ jobs:
               exit 1
             }
           done
+
+      - name: 💾 Dump final database state
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p db_dumps
+          mysqldump -h 127.0.0.1 -u root -proot bookstore > db_dumps/bookstore_dump_$(date +%Y%m%d_%H%M%S).sql
+          echo "✅ Database dumped successfully"
+
+      - name: 📤 Upload database dump
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: database-dump
+          path: db_dumps/
+          retention-days: 1
+
+      - name: 🔄 Commit updated dump to repo
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add db_dumps/
+          git commit -m "Update database dump [skip ci]" || echo "No changes to commit"
+          git push
