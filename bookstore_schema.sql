@@ -129,3 +129,11 @@ ADD CONSTRAINT fk_bookauthor_author FOREIGN KEY (author_id) REFERENCES author (a
 
 -- Table: Add address foreign key
 ALTER TABLE address ADD CONSTRAINT fk_address_country FOREIGN KEY (country_id) REFERENCES country (country_id);
+
+-- Table: Create database users
+CREATE USER 'bookstore_admin'@'localhost' IDENTIFIED BY 'admin123';
+CREATE USER 'bookstore_staff'@'localhost' IDENTIFIED BY 'staff123';
+
+-- Table: Assign privileges
+GRANT ALL PRIVILEGES ON bookstore.* TO 'bookstore_admin'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON bookstore.* TO 'bookstore_staff'@'localhost';
