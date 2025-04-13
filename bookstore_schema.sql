@@ -69,8 +69,6 @@ CREATE TABLE
         city VARCHAR(100) NOT NULL,
         postal_code VARCHAR(20),
         country_id INT
-<<<<<<< Updated upstream
-=======
     );
 
 -- Table: Create shipping_method table
@@ -119,5 +117,4 @@ CREATE TABLE
         customer_id INT NOT NULL,
         shipping_method_id INT,
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP
->>>>>>> Stashed changes
     );
