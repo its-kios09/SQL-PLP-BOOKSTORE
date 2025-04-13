@@ -65,6 +65,38 @@ SQL-PLP-BOOKSTORE/
 
 ```
 
+## ✅ How to Test the Schema
+### 🖥️ For Linux/macOS Command Line
+``` bash
+# Step 1: Navigate to the directory where the SQL file is located
+cd /path/to/your/schema/
+
+# Step 2: Log in to MySQL and run the schema
+mysql -u root -p < bookstore_schema.sql
+```
+### 🪟 For Windows Command Line (Command Prompt or PowerShell)
+```bash
+# Step 1: Open CMD or PowerShell
+# Step 2: Navigate to your schema folder
+cd C:\path\to\your\schema\
+
+# Step 3: Run the schema
+mysql -u root -p < bookstore_schema.sql
+```
+### 🖱️ For MySQL Workbench (GUI Users)
+- Open MySQL Workbench.
+
+- Connect to your MySQL Server.
+
+- Open File → Select bookstore_schema.sql.
+
+- The file will open in a new SQL editor tab.
+
+- Click the ⚡ Execute button or press Ctrl + Shift + Enter to run the script.
+
+
+
+
 ## 🚀 CI/CD Pipeline
 We use GitHub Actions to automatically test and validate the schema whenever code is pushed or a pull request is made.
 
