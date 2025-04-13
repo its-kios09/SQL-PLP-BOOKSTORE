@@ -98,7 +98,18 @@ mysql -u root -p < bookstore_schema.sql
 
 
 ## 🚀 CI/CD Pipeline
-We use GitHub Actions to automatically test and validate the schema whenever code is pushed or a pull request is made.
+
+Our GitHub Actions workflow automatically validates database changes and creates schema dumps:
+
+### 🔧 What It Does
+1. **Schema Validation**:
+   - Spins up a MySQL 8.0 container
+   - Applies `bookstore_schema.sql`
+   - Runs all SQL files in `queries/` directory
+
+2. **Artifact Generation**:
+   - Creates timestamped database dumps on `main` branch updates
+   - Stores dumps as downloadable artifacts for 7 days
 
 ## ✅ Features:
 - Starts a temporary MySQL server
