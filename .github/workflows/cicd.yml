@@ -9,6 +9,7 @@ on:
 jobs:
   mysql-test:
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:8.0
@@ -17,44 +18,61 @@ jobs:
           MYSQL_DATABASE: bookstore
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
-      - name: Checkout repository
+      - name: ⬇️ Checkout repository
         uses: actions/checkout@v3
 
-      - name: Wait for MySQL to be ready
+      - name: 🕒 Wait for MySQL to be ready
         run: sleep 30
 
-      - name: Install MySQL client
+      - name: 🔧 Install MySQL client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      - name: Describe All Tables in Database
+      - name: 📦 Apply bookstore schema
         run: |
-          echo "✅ Describing the tables in the bookstore database..."
-          # List all tables in the bookstore database
+          echo "📦 Applying schema: bookstore_schema.sql"
+          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql
+
+      - name: 🗂 Describe All Tables in Database
+        run: |
+          echo -e "\033[1;34m📋 Describing all tables in 'bookstore' database...\033[0m"
           tables=$(mysql -h 127.0.0.1 -u root -proot bookstore -e "SHOW TABLES;" | tail -n +2)
-          
-          # Loop through all tables and describe them
+
+          if [ -z "$tables" ]; then
+            echo -e "\033[1;31m❌ No tables found in 'bookstore'. Check schema file.\033[0m"
+            exit 1
+          fi
+
           for table in $tables; do
-            echo "✅ Describing table: $table"
+            echo -e "\n\033[1;36m🔎 Table: $table\033[0m"
             mysql -h 127.0.0.1 -u root -proot bookstore -e "DESCRIBE $table;"
           done
 
-      - name: Run schema and test SQL
+      - name: 🚀 Execute SQL Queries with Output
         run: |
-          # Apply the bookstore schema
-          mysql -h 127.0.0.1 -u root -proot bookstore < bookstore_schema.sql
-          
-          # Define an array of possible query files
-          test_files=("queries/test_queries.sql" "queries/additional_tests.sql" "queries/extra_test.sql")
-          
-          # Loop through the array and run any existing query files
-          for file in "${test_files[@]}"; do
-            if [ -f "$file" ]; then
-              echo "✅ $file found in PR. Running test queries..."
-              mysql -h 127.0.0.1 -u root -proot bookstore < "$file"
-            else
-              echo "⚠️ No $file found in PR. Skipping this test query file."
-            fi
+          echo -e "\033[1;34m🚀 Running SQL files in 'queries/' with output...\033[0m"
+          shopt -s nullglob
+          sql_files=(queries/*.sql)
+
+          if [ ${#sql_files[@]} -eq 0 ]; then
+            echo -e "\033[1;33m⚠️ No SQL test files found in queries/\033[0m"
+          fi
+
+          for file in "${sql_files[@]}"; do
+            echo -e "\n\033[1;36m▶️ Executing: $file\033[0m"
+            echo -e "\033[1;90m----- SQL Contents -----\033[0m"
+            cat "$file"
+            echo -e "\033[1;90m------------------------\033[0m"
+
+            echo -e "\n\033[1;32m🧪 Result:\033[0m"
+            mysql -h 127.0.0.1 -u root -proot bookstore --table < "$file" || {
+              echo -e "\033[1;31m❌ Error executing $file\033[0m"
+              exit 1
+            }
           done
