@@ -95,39 +95,37 @@ CREATE TABLE
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
--- Table: Create customer table
+-- Table: Create shipping_method table
 CREATE TABLE
-    customer (
-        customer_id INT AUTO_INCREMENT PRIMARY KEY,
-        first_name VARCHAR(50) NOT NULL,
-        last_name VARCHAR(50) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL
+    shipping_method (
+        method_id INT AUTO_INCREMENT PRIMARY KEY,
+        method_name VARCHAR(50) NOT NULL,
+        cost DECIMAL(10, 2) NOT NULL
     );
 
--- Table: Create customer_address table
+-- Table: Create order_status table
 CREATE TABLE
-    customer_address (
+    order_status (
+        status_id INT AUTO_INCREMENT PRIMARY KEY,
+        status_value VARCHAR(20) NOT NULL
+    );
+
+-- Table: Create cust_order table
+CREATE TABLE
+    cust_order (
+        order_id INT AUTO_INCREMENT PRIMARY KEY,
         customer_id INT NOT NULL,
-        address_id INT NOT NULL,
-        status_id INT NOT NULL,
-        PRIMARY KEY (customer_id, address_id)
+        shipping_method_id INT,
+        order_date DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
--- Table: Create order_line table
-CREATE TABLE
-    order_line (
-        line_id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT NOT NULL,
-        book_id INT NOT NULL,
-        quantity INT NOT NULL,
-        price DECIMAL(10, 2) NOT NULL
-    );
+-- Table: Add book foreign keys
+ALTER TABLE book ADD CONSTRAINT fk_book_publisher FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
+ADD CONSTRAINT fk_book_language FOREIGN KEY (language_id) REFERENCES book_language (language_id);
 
--- Table: Create order_history table
-CREATE TABLE
-    order_history (
-        history_id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT NOT NULL,
-        status_id INT NOT NULL,
-        status_date DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+-- Table: Add book_author foreign keys
+ALTER TABLE book_author ADD CONSTRAINT fk_bookauthor_book FOREIGN KEY (book_id) REFERENCES book (book_id),
+ADD CONSTRAINT fk_bookauthor_author FOREIGN KEY (author_id) REFERENCES author (author_id);
+
+-- Table: Add address foreign key
+ALTER TABLE address ADD CONSTRAINT fk_address_country FOREIGN KEY (country_id) REFERENCES country (country_id);
